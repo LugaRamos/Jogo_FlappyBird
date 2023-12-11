@@ -32,55 +32,80 @@ let imagemCanoInferior; // Imagem do cano inferior a ser carregada
 // Configurações de física
 let velocidadeX = -2; // Velocidade de movimento dos canos para a esquerda
 let velocidadeY = 0; // Velocidade de salto do pássaro
+let fatorVelocidade = 0;
 let gravidade = 0.4; // Gravidade aplicada ao pássaro
 
 let jogoEncerrado = false; // Indica se o jogo está encerrado
+let jogoComecou = false;
 let pontuacao = 0; // Pontuação do jogador
+
+let nomeUsuario;
+let pontos = 0;
+let inclinacaoPassaro = 0;
 
 // Aguarda até que a página HTML seja totalmente carregada antes de executar o código
 window.onload = function () {
-    // Obtém a referência do elemento do tabuleiro no HTML usando o ID "tabuleiro"
-    tabuleiro = document.getElementById("tabuleiro");
 
-    // Define a altura e largura do tabuleiro com base nas variáveis predefinidas
-    tabuleiro.height = alturaTabuleiro;
-    tabuleiro.width = larguraTabuleiro;
+    nomeUsuario = prompt("Digite seu nome:");
 
-    // Obtém o contexto de desenho 2D do tabuleiro
-    contexto = tabuleiro.getContext("2d"); // Usado para desenhar no tabuleiro
+    if(nomeUsuario !== null && nomeUsuario !== ""){
 
-    // Desenha a imagem do pássaro no tabuleiro quando ela é carregada
-    imagemPassaro = new Image(); //Construtor padrão para criar objetos de imagem
-    imagemPassaro.src = "assets/flappybird.png"; //Define o PNG da imagem
-    imagemPassaro.onload = function () {
-        contexto.drawImage(imagemPassaro, passaro.x, passaro.y, passaro.largura, passaro.altura);
+        
+        // Obtém a referência do elemento do tabuleiro no HTML usando o ID "tabuleiro"
+        tabuleiro = document.getElementById("tabuleiro");
+
+        // Define a altura e largura do tabuleiro com base nas variáveis predefinidas
+        tabuleiro.height = alturaTabuleiro;
+        tabuleiro.width = larguraTabuleiro;
+
+        // Obtém o contexto de desenho 2D do tabuleiro
+        contexto = tabuleiro.getContext("2d"); // Usado para desenhar no tabuleiro
+
+        // Desenha a imagem do pássaro no tabuleiro quando ela é carregada
+        imagemPassaro = new Image(); //Construtor padrão para criar objetos de imagem
+        imagemPassaro.src = "assets/flappybird.png"; //Define o PNG da imagem
+        imagemPassaro.onload = function () {
+            contexto.drawImage(imagemPassaro, passaro.x, passaro.y, passaro.largura, passaro.altura);
+        }
+
+
+        // Carrega a imagem do cano superior
+        imagemCanoSuperior = new Image();
+        imagemCanoSuperior.src = "assets/cano-alto.png";
+
+        // Carrega a imagem do cano inferior
+        imagemCanoInferior = new Image();
+        imagemCanoInferior.src = "assets/cano-baixo.png";
+
+        document.addEventListener("keydown", function(evento){
+            if(evento.code == "Space" && jogoComecou == false){
+                jogoComecou = true;
+            
+    
+            // Inicia o loop de atualização do jogo usando requestAnimationFrame
+                requestAnimationFrame(atualizar);
+    
+                // Gera novos canos a cada 1.5 segundos usando setInterval
+                setInterval(gerarCanos, 1500);
+    
+            // Adiciona um ouvinte de evento para responder às teclas pressionadas
+                document.addEventListener("keydown", moverPassaro);
+                document.addEventListener("keydown", reiniciarJogo);
+
+            }
+        });
+    }else{
+        alert("Nome inválido. Recarregue a página para tentar novamente.");
     }
-
-
-    // Carrega a imagem do cano superior
-    imagemCanoSuperior = new Image();
-    imagemCanoSuperior.src = "assets/cano-alto.png";
-
-    // Carrega a imagem do cano inferior
-    imagemCanoInferior = new Image();
-    imagemCanoInferior.src = "assets/cano-baixo.png";
-
-    // Inicia o loop de atualização do jogo usando requestAnimationFrame
-    requestAnimationFrame(atualizar);
-
-    // Gera novos canos a cada 1.5 segundos usando setInterval
-    setInterval(gerarCanos, 1500);
-
-    // Adiciona um ouvinte de evento para responder às teclas pressionadas
-    document.addEventListener("keydown", moverPassaro);
 
 }
 
 function moverPassaro(evento) {
     // Verifica se a tecla pressionada é a barra de espaço, seta para cima ou tecla X
-    if (evento.code == "Space" || evento.code == "ArrowUp" || evento.code == "KeyX") {
+    if (evento.code == "Space" || evento.code == "ArrowUp" || evento.code == "KeyX" || evento.code == "touchstart") {
         // Ajusta a velocidade vertical para simular um salto
         velocidadeY = -6;
+        inclinacaoPassaro = -60;
 
     }
 }
@@ -90,7 +115,10 @@ function atualizar() {
     requestAnimationFrame(atualizar);
 
     if (jogoEncerrado) {
-        contexto.fillText("FIM DE JOGO", 50, 60);
+        contexto.font = "45px sans-serif";
+        contexto.fillText("FIM DE JOGO", 30, alturaTabuleiro/2);
+        contexto.font = "20px sans-serif";
+        contexto.fillText("Pressione R para reiniciar", 60, alturaTabuleiro/2 + 25);
         return;
     }
 
@@ -127,6 +155,10 @@ function atualizar() {
         if (detectarColisao(passaro, cano)) {
             jogoEncerrado = true; // Marca que o jogo está encerrado em caso de colisão
         }
+
+        if(passaro.y > 640){
+            jogoEncerrado = true;
+        }
     }
 
     // Limpa os canos que já passaram da tela
@@ -139,8 +171,22 @@ function atualizar() {
     contexto.font = "45px sans-serif";
     contexto.fillText(pontuacao, 5, 45);
 
+}
 
+function reiniciarJogo(evento) {
+    if (jogoEncerrado === true){
+        if (evento.code == "KeyR") {
+            reiniciarVariaveis();
+        }
+    }
+}
 
+function reiniciarVariaveis(){
+    jogoEncerrado = false;
+    pontuacao = 0;
+    passaro.y = posicaoYPassaro;
+    arrayCanos = [];
+    velocidadeY = 0;
 }
 
 function gerarCanos() {
@@ -192,15 +238,4 @@ function detectarColisao(passaro, cano) {
     }
 
     return false;
-}
-
-document.addEventListener("touchstart", toqueNatela);
-//document.addEventListener("touchend", reiniciar);
-
-function toqueNatela(){
-    velocidadeY = -6;
-}
-
-function reiniciar(){
-    location.reload();
 }
